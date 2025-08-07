@@ -1,0 +1,473 @@
+(function () {
+  if (window.fourXUnifiedMenuLoaded) return alert("4x Menu already loaded!");
+  window.fourXUnifiedMenuLoaded = true;
+
+  // === Styles ===
+  const style = document.createElement('style');
+  style.textContent = `
+    #fourXUnifiedMenu {
+      position: fixed;
+      top: 60px;
+      right: 20px;
+      width: 280px;
+      background: rgba(10,10,10,0.95);
+      color: #0f0;
+      font-family: monospace;
+      font-size: 14px;
+      border: 2px solid #0f0;
+      border-radius: 12px;
+      z-index: 9999999;
+      user-select: none;
+      cursor: move;
+      box-shadow: 0 0 12px #0f0;
+    }
+    #fourXUnifiedMenu header {
+      text-align: center;
+      font-weight: bold;
+      font-size: 18px;
+      padding: 8px;
+      border-bottom: 2px solid #0f0;
+    }
+    #fourXUnifiedMenu nav {
+      display: flex;
+      border-bottom: 1px solid #0f0;
+    }
+    #fourXUnifiedMenu nav button {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #0f0;
+      padding: 6px 0;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      outline: none;
+    }
+    #fourXUnifiedMenu nav button.active {
+      background: #0f0;
+      color: #000;
+      border-radius: 10px 10px 0 0;
+    }
+    #fourXUnifiedMenu section {
+      padding: 10px;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    #fourXUnifiedMenu button.action-btn {
+      width: 100%;
+      margin: 6px 0;
+      padding: 7px;
+      background: #222;
+      color: #0f0;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+      font-weight: bold;
+    }
+    #fourXUnifiedMenu button.action-btn:hover {
+      background: #0f0;
+      color: #000;
+    }
+    #fourXUnifiedMenu input[type=number], #fourXUnifiedMenu input[type=text] {
+      width: 100%;
+      padding: 6px;
+      margin: 6px 0 12px 0;
+      border-radius: 6px;
+      border: 1px solid #0f0;
+      background: #111;
+      color: #0f0;
+      font-family: monospace;
+      font-size: 14px;
+      outline: none;
+    }
+    #fourXUnifiedMenu label {
+      display: block;
+      margin-top: 10px;
+      font-size: 13px;
+      color: #0f0;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // === Create menu ===
+  const menu = document.createElement('div');
+  menu.id = 'fourXUnifiedMenu';
+  menu.style.left = 'auto'; // initial right fixed
+  menu.style.top = '60px';
+  menu.style.right = '20px';
+  menu.style.position = 'fixed';
+
+  menu.innerHTML = `
+    <header>4x Menu - Universal</header>
+    <nav>
+      <button id="tabDino" class="active">Dino 🦖</button>
+      <button id="tabClicker">Clicker 💰</button>
+    </nav>
+    <section id="dinoSection">
+      <button class="action-btn" id="autoJumpBtn">Auto Jump: OFF</button>
+      <button class="action-btn" id="scoreAddBtn">+1000 Score</button>
+      <button class="action-btn" id="speedBoostBtn">Speed Boost</button>
+      <button class="action-btn" id="invincibleBtn">Invincibility: OFF</button>
+      <button class="action-btn" id="freezeTimeBtn">Freeze Time: OFF</button>
+      <button class="action-btn" id="slowMoBtn">Slow Motion: OFF</button>
+      <label for="manualScoreInput">Set Score Manually:</label>
+      <input type="number" id="manualScoreInput" placeholder="Enter score (distance)">
+      <button class="action-btn" id="setScoreBtn">Set Score</button>
+      <button class="action-btn" id="nightModeBtn">Night Mode: OFF</button>
+      <button class="action-btn" id="doubleSpeedBtn">Double Speed: OFF</button>
+      <label for="dinoColorInput">Dino Color (CSS color):</label>
+      <input type="text" id="dinoColorInput" placeholder="e.g. lime, #0f0">
+      <button class="action-btn" id="setDinoColorBtn">Set Dino Color</button>
+      <button class="action-btn" id="closeMenuBtn">Close Menu</button>
+    </section>
+    <section id="clickerSection" style="display:none;">
+      <label for="moneyInput">Set Money Amount:</label>
+      <input type="number" id="moneyInput" placeholder="Enter money amount" value="9999999" min="0" step="1">
+      <button class="action-btn" id="setMoneyBtn">Set Money</button>
+
+      <label for="autoClickIntervalInput">Auto Click Interval (ms):</label>
+      <input type="number" id="autoClickIntervalInput" placeholder="e.g. 100" value="100" min="10" step="10">
+      <button class="action-btn" id="toggleAutoClickBtn">Auto Click: OFF</button>
+
+      <button class="action-btn" id="findMoneyVarsBtn">Find Money Vars</button>
+      <button class="action-btn" id="doubleMoneyBtn">Double Money Every Second: OFF</button>
+
+      <label for="xpInput">Set XP/Level (if available):</label>
+      <input type="number" id="xpInput" placeholder="Enter XP or Level" min="0" step="1">
+      <button class="action-btn" id="setXPBtn">Set XP/Level</button>
+
+      <button class="action-btn" id="closeClickerMenuBtn">Close Menu</button>
+    </section>
+  `;
+  document.body.appendChild(menu);
+
+  // === Drag logic ===
+  (function dragElement(el) {
+    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    el.onmousedown = dragMouseDown;
+
+    function dragMouseDown(e) {
+      if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL') return;
+      e = e || window.event;
+      e.preventDefault();
+      // get cursor position:
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      document.onmouseup = closeDragElement;
+      document.onmousemove = elementDrag;
+    }
+
+    function elementDrag(e) {
+      e = e || window.event;
+      e.preventDefault();
+      // calculate new cursor position:
+      pos1 = pos3 - e.clientX;
+      pos2 = pos4 - e.clientY;
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      // set element position:
+      let newTop = (el.offsetTop - pos2);
+      let newLeft = (el.offsetLeft - pos1);
+      if(newTop < 0) newTop = 0;
+      if(newLeft < 0) newLeft = 0;
+      el.style.top = newTop + "px";
+      el.style.left = newLeft + "px";
+      el.style.right = "auto";
+    }
+
+    function closeDragElement() {
+      document.onmouseup = null;
+      document.onmousemove = null;
+    }
+  })(menu);
+
+  // === Tabs logic ===
+  const tabDino = document.getElementById('tabDino');
+  const tabClicker = document.getElementById('tabClicker');
+  const dinoSec = document.getElementById('dinoSection');
+  const clickerSec = document.getElementById('clickerSection');
+
+  tabDino.onclick = () => {
+    tabDino.classList.add('active');
+    tabClicker.classList.remove('active');
+    dinoSec.style.display = '';
+    clickerSec.style.display = 'none';
+  };
+  tabClicker.onclick = () => {
+    tabClicker.classList.add('active');
+    tabDino.classList.remove('active');
+    clickerSec.style.display = '';
+    dinoSec.style.display = 'none';
+  };
+
+  // === Dino game vars & helpers ===
+  let autoJump = false;
+  let autoJumpInterval;
+  let invincible = false;
+  let freezeTime = false;
+  let slowMotion = false;
+  let doubleSpeed = false;
+  let doubleSpeedInterval;
+  let doubleMoneyIntervalClicker;
+
+  function isDinoGame() {
+    return !!(window.Runner && Runner.instance_);
+  }
+
+  // Dino Actions
+  function autoJumpFunc() {
+    if (isDinoGame()) {
+      Runner.instance_.tRex.startJump(Runner.instance_.currentSpeed);
+    }
+  }
+
+  // === Dino buttons handlers ===
+  document.getElementById('autoJumpBtn').onclick = () => {
+    autoJump = !autoJump;
+    document.getElementById('autoJumpBtn').textContent = `Auto Jump: ${autoJump ? 'ON' : 'OFF'}`;
+    if (autoJump) {
+      autoJumpInterval = setInterval(autoJumpFunc, 50);
+    } else {
+      clearInterval(autoJumpInterval);
+    }
+  };
+
+  document.getElementById('scoreAddBtn').onclick = () => {
+    if (!isDinoGame()) return alert("Not on Dino game!");
+    Runner.instance_.distanceRan += 1000;
+    Runner.instance_.distanceMeter.set(Runner.instance_.distanceRan);
+  };
+
+  document.getElementById('speedBoostBtn').onclick = () => {
+    if (!isDinoGame()) return alert("Not on Dino game!");
+    Runner.instance_.setSpeed(Runner.instance_.currentSpeed + 5);
+  };
+
+  document.getElementById('invincibleBtn').onclick = () => {
+    if (!isDinoGame()) return alert("Not on Dino game!");
+    invincible = !invincible;
+    document.getElementById('invincibleBtn').textContent = `Invincibility: ${invincible ? 'ON' : 'OFF'}`;
+    if (invincible) {
+      Runner.instance_.gameOver = function () {}; // Override gameOver to prevent dying
+    } else {
+      location.reload();
+    }
+  };
+
+  document.getElementById('freezeTimeBtn').onclick = () => {
+    if (!isDinoGame()) return alert("Not on Dino game!");
+    freezeTime = !freezeTime;
+    document.getElementById('freezeTimeBtn').textContent = `Freeze Time: ${freezeTime ? 'ON' : 'OFF'}`;
+    if (freezeTime) {
+      Runner.instance_.playing = false;
+    } else {
+      Runner.instance_.playing = true;
+    }
+  };
+
+  document.getElementById('slowMoBtn').onclick = () => {
+    if (!isDinoGame()) return alert("Not on Dino game!");
+    slowMotion = !slowMotion;
+    document.getElementById('slowMoBtn').textContent = `Slow Motion: ${slowMotion ? 'ON' : 'OFF'}`;
+    if (slowMotion) {
+      Runner.instance_.setSpeed(1);
+    } else {
+      Runner.instance_.setSpeed(6);
+    }
+  };
+
+  document.getElementById('setScoreBtn').onclick = () => {
+    if (!isDinoGame()) return alert("Not on Dino game!");
+    const val = parseInt(document.getElementById('manualScoreInput').value);
+    if (isNaN(val) || val < 0) return alert("Enter valid positive number");
+    Runner.instance_.distanceRan = val;
+    Runner.instance_.distanceMeter.set(val);
+  };
+
+  document.getElementById('nightModeBtn').onclick = () => {
+    if (!isDinoGame()) return alert("Not on Dino game!");
+    const canvas = Runner.instance_.canvas;
+    if (!canvas) return alert("Can't find Dino canvas");
+    const isNight = canvas.style.filter === "invert(1)";
+    if (isNight) {
+      canvas.style.filter = "none";
+      document.getElementById('nightModeBtn').textContent = 'Night Mode: OFF';
+    } else {
+      canvas.style.filter = "invert(1)";
+      document.getElementById('nightModeBtn').textContent = 'Night Mode: ON';
+    }
+  };
+
+  document.getElementById('doubleSpeedBtn').onclick = () => {
+    if (!isDinoGame()) return alert("Not on Dino game!");
+    doubleSpeed = !doubleSpeed;
+    document.getElementById('doubleSpeedBtn').textContent = `Double Speed: ${doubleSpeed ? 'ON' : 'OFF'}`;
+    if (doubleSpeed) {
+      doubleSpeedInterval = setInterval(() => {
+        Runner.instance_.setSpeed(Runner.instance_.currentSpeed + 0.05);
+      }, 100);
+    } else {
+      clearInterval(doubleSpeedInterval);
+      Runner.instance_.setSpeed(6);
+    }
+  };
+
+  document.getElementById('setDinoColorBtn').onclick = () => {
+    if (!isDinoGame()) return alert("Not on Dino game!");
+    const color = document.getElementById('dinoColorInput').value.trim();
+    if (!color) return alert("Enter a color (name or hex)");
+    const dino = Runner.instance_.tRex;
+    if (!dino) return alert("Dino not found");
+    dino.config.COLOR = color; // Not official but override dino color
+    // We override the draw method to change color, hacky but works:
+    dino.draw = function () {
+      const ctx = Runner.instance_.canvas.getContext('2d');
+      ctx.fillStyle = color;
+      const x = this.xPos;
+      const y = this.yPos;
+      const width = 44;
+      const height = 47;
+      ctx.clearRect(x, y - height, width, height);
+      ctx.fillRect(x, y - height, width, height);
+    };
+  };
+
+  document.getElementById('closeMenuBtn').onclick = () => {
+    menu.remove();
+    window.fourXUnifiedMenuLoaded = false;
+  };
+
+  // === Clicker game helpers ===
+  let autoClickerInterval = null;
+  let doubleMoney = false;
+
+  function tryFindMoneyVars() {
+    // Tries to find numeric globals with money-like names
+    const candidates = [];
+    for (let key in window) {
+      if (
+        typeof window[key] === 'number' &&
+        (key.toLowerCase().includes('money') ||
+          key.toLowerCase().includes('cash') ||
+          key.toLowerCase().includes('coins') ||
+          key.toLowerCase().includes('gold') ||
+          key.toLowerCase().includes('currency'))
+      ) {
+        candidates.push(key);
+      }
+    }
+    if (candidates.length) {
+      alert('Possible money vars found:\n' + candidates.join(', '));
+    } else {
+      alert('No obvious money variables found in global scope.');
+    }
+  }
+
+  document.getElementById('setMoneyBtn').onclick = () => {
+    const val = parseInt(document.getElementById('moneyInput').value);
+    if (isNaN(val) || val < 0) return alert("Enter valid positive number");
+    // Try to set found money vars to val
+    let found = false;
+    for (let key in window) {
+      if (
+        typeof window[key] === 'number' &&
+        (key.toLowerCase().includes('money') ||
+          key.toLowerCase().includes('cash') ||
+          key.toLowerCase().includes('coins') ||
+          key.toLowerCase().includes('gold') ||
+          key.toLowerCase().includes('currency'))
+      ) {
+        window[key] = val;
+        found = true;
+      }
+    }
+    if (found) {
+      alert("Money variables set to " + val);
+    } else {
+      alert("No money variables found to set.");
+    }
+  };
+
+  document.getElementById('toggleAutoClickBtn').onclick = () => {
+    if (autoClickerInterval) {
+      clearInterval(autoClickerInterval);
+      autoClickerInterval = null;
+      document.getElementById('toggleAutoClickBtn').textContent = "Auto Click: OFF";
+    } else {
+      const interval = parseInt(document.getElementById('autoClickIntervalInput').value);
+      if (isNaN(interval) || interval < 10) return alert("Enter a valid interval >= 10ms");
+      autoClickerInterval = setInterval(() => {
+        // Attempt to click common clicker buttons
+        const clickTargets = [
+          document.querySelector('.clicker-button'),
+          document.querySelector('.btn-click'),
+          document.querySelector('#clickerButton'),
+          document.querySelector('button'),
+        ];
+        for (const el of clickTargets) {
+          if (el && !el.disabled) el.click();
+        }
+      }, interval);
+      document.getElementById('toggleAutoClickBtn').textContent = "Auto Click: ON";
+    }
+  };
+
+  document.getElementById('findMoneyVarsBtn').onclick = () => {
+    tryFindMoneyVars();
+  };
+
+  document.getElementById('doubleMoneyBtn').onclick = () => {
+    doubleMoney = !doubleMoney;
+    document.getElementById('doubleMoneyBtn').textContent = `Double Money Every Second: ${doubleMoney ? 'ON' : 'OFF'}`;
+    if (doubleMoney) {
+      doubleMoneyIntervalClicker = setInterval(() => {
+        for (let key in window) {
+          if (
+            typeof window[key] === 'number' &&
+            (key.toLowerCase().includes('money') ||
+              key.toLowerCase().includes('cash') ||
+              key.toLowerCase().includes('coins') ||
+              key.toLowerCase().includes('gold') ||
+              key.toLowerCase().includes('currency'))
+          ) {
+            window[key] *= 2;
+          }
+        }
+      }, 1000);
+    } else {
+      clearInterval(doubleMoneyIntervalClicker);
+    }
+  };
+
+  document.getElementById('setXPBtn').onclick = () => {
+    const val = parseInt(document.getElementById('xpInput').value);
+    if (isNaN(val) || val < 0) return alert("Enter valid positive number");
+    // Try to find XP or Level vars
+    let found = false;
+    for (let key in window) {
+      if (
+        typeof window[key] === 'number' &&
+        (key.toLowerCase().includes('xp') ||
+          key.toLowerCase().includes('level'))
+      ) {
+        window[key] = val;
+        found = true;
+      }
+    }
+    if (found) {
+      alert("XP/Level variables set to " + val);
+    } else {
+      alert("No XP/Level variables found to set.");
+    }
+  };
+
+  document.getElementById('closeClickerMenuBtn').onclick = () => {
+    menu.remove();
+    window.fourXUnifiedMenuLoaded = false;
+  };
+
+  // === Initial instructions ===
+  alert("4x Menu loaded!\n\nSwitch tabs to access Dino or Clicker hacks.\nDrag menu by dragging outside buttons.\n\nUse with care!");
+
+})();

@@ -99,7 +99,7 @@
   menu.style.position = 'fixed';
 
   menu.innerHTML = `
-    <header>4x Menu - Universal</header>
+    <header>4x Menu v2 - Universal</header>
     <nav>
       <button id="tabDino" class="active">Dino 🦖</button>
       <button id="tabClicker">Clicker 💰</button>
@@ -376,6 +376,16 @@
           key.toLowerCase().includes('cash') ||
           key.toLowerCase().includes('coins') ||
           key.toLowerCase().includes('gold') ||
+          key.toLowerCase().includes('Candy') ||
+          key.toLowerCase().includes('ducks') ||
+          key.toLowerCase().includes('cats') ||
+          key.toLowerCase().includes('kittens') ||
+          key.toLowerCase().includes('clicks') ||
+          key.toLowerCase().includes('corn') ||
+          key.toLowerCase().includes('fedex') ||
+          key.toLowerCase().includes('cubes') ||
+          key.toLowerCase().includes('blocks') ||
+          key.toLowerCase().includes('cat blocks') ||
           key.toLowerCase().includes('currency'))
       ) {
         window[key] = val;
@@ -429,6 +439,16 @@
               key.toLowerCase().includes('cash') ||
               key.toLowerCase().includes('coins') ||
               key.toLowerCase().includes('gold') ||
+              key.toLowerCase().includes('Candy') ||
+              key.toLowerCase().includes('ducks') ||
+              key.toLowerCase().includes('cats') ||
+              key.toLowerCase().includes('kittens') ||
+              key.toLowerCase().includes('clicks') ||
+              key.toLowerCase().includes('corn') ||
+              key.toLowerCase().includes('fedex') ||
+              key.toLowerCase().includes('cubes') ||
+              key.toLowerCase().includes('blocks') ||
+              key.toLowerCase().includes('cat blocks') ||
               key.toLowerCase().includes('currency'))
           ) {
             window[key] *= 2;
